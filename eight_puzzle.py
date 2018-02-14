@@ -2,6 +2,8 @@
 # https://www.ics.uci.edu/~welling/teaching/271fall09/InfSearch271f09.ppt
 # https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
 # deepcopy python
+# heapq python
+
 
 # TO DO
 # How to create a graph/tree structure
@@ -15,11 +17,12 @@ import heapq
 puzzle = [[1,8,2],[0,4,3],[7,6,5]]
 goal_state = [[1,2,3],[4,5,6],[7,8,0]]
 
+# My node class
 class Node:
-	def __init__(self, value, g, h1, h2):
+	def __init__(self, puzzle, g, h1, h2):
 
-		self.parent = None
-		self.value = value
+		# Contains the actual puzzle
+		self.puzzle = puzzle
 
 		# g(n) cost so far
 		self.g = g
@@ -28,107 +31,114 @@ class Node:
 		self.h1 = h1
 		self.h2	= h2
 
-	 # do not compare nodes
-	 # https://stackoverflow.com/questions/39423979/order-of-comparison-for-heap-elements-in-python
-	def __lt__(self, other):
-		return self.h1 < other.h1
+	# This is necessary in order for heapqueue to work since certain heuristics will have the same priority
+	# Therefore, arbitrarily compare nodes because priority really doesn't matter when they have the same f(n)
+	# Got information on how to do this from:
+	# https://stackoverflow.com/questions/39423979/order-of-comparison-for-heap-elements-in-python
+	def __lt__(self, next):
+		return self.h1 < next.h1
 
-# This contains my puzzle helper functions
-
+# Prints the puzzle nicely
 def print_puzzle(puzzle):
 	for i in puzzle:
 		print (i)
 	print("\n")
 
-def valid_append(valid_puzzles, puzzle, repeated_state, row_1, col_1, row_2, col_2):
+# Swaps the number with the blank spot 0
+def swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, b_row, b_col):
+
+	# Must deepcopy the puzzle because each swap needs to be a new list and not a modification of old list
+	# Each puzzle is a unique copy
 	temp_puzzle = deepcopy(puzzle)
-	temp_puzzle[row_1][col_1] = 0
-	temp_puzzle[row_2][col_2] = puzzle[row_1][col_1]
-	if temp_puzzle not in repeated_state:
-		valid_puzzles.append(temp_puzzle)
-	return valid_puzzles
+
+	# Swap blank and number
+	temp_puzzle[num_row][num_col] = 0
+	temp_puzzle[b_row][b_col] = puzzle[num_row][num_col]
+
+	# Check if puzzle state seen before and add to seen puzzles
+	if temp_puzzle not in seen_puzzle:
+		expand_puzzle.append(temp_puzzle)
+	return expand_puzzle
 
 # Outputs a nested list of valid puzzles
-def valid_moves(puzzle, repeated_state):
+def expand_node(puzzle, seen_puzzle):
 	moves = []
-	valid_puzzles = []
+	expand_puzzle = []
 
 	# Returns blank's location as a tuple
-	# Consulted Stack Overflow for list comprehension trick: 
+	# Looking for 0
+	# Consulted Stack Overflow for list comprehension: 
 	# https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
-	blank_loc = [(i, j.index(0)) for i, j in enumerate(puzzle) if 0 in j]
+	blank = 0
+	blank_loc = [(i, j.index(blank)) for i, j in enumerate(puzzle) if blank in j]
 	blank_row, blank_col = blank_loc[0][0], blank_loc[0][1]
 	
 	# Finds all valid moves
-	# Must use deep copy because each puzzle is a unique copy
-	# LEFT
+
+	# Move blank LEFT
 	if blank_col - 1 >= 0:
-		valid_puzzles = valid_append(valid_puzzles, puzzle, repeated_state, blank_row, blank_col - 1, blank_row, blank_col)
+		num_row = blank_row
+		num_col = blank_col - 1
+		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
 
-	# UP
+	# Move blank UP
 	if blank_row - 1 >= 0:
-		valid_puzzles = valid_append(valid_puzzles, puzzle, repeated_state, blank_row - 1, blank_col, blank_row, blank_col)
+		num_row = blank_row - 1
+		num_col = blank_col
+		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
 
-	# RIGHT
+	# Move blank RIGHT
 	if blank_col + 1 <= len(puzzle)-1:
-		valid_puzzles = valid_append(valid_puzzles, puzzle, repeated_state, blank_row, blank_col + 1, blank_row, blank_col)
+		num_row = blank_row
+		num_col = blank_col + 1
+		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
 
-	# DOWN
+	# Move blank DOWN
 	if blank_row + 1 <= len(puzzle)-1:
-		valid_puzzles = valid_append(valid_puzzles, puzzle, repeated_state, blank_row + 1, blank_col, blank_row, blank_col)
+		num_row = blank_row + 1
+		num_col = blank_col
+		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
 
-	return valid_puzzles
+	return expand_puzzle
 
+###############################################################
 
-# This contains my searching algorithms
-
+# Uniform cost search search algorithm
 def uniform_cost_search(puzzle):
-	g = 0
 	global num_nodes, max_queue
-	repeated_state = []
-	print("Start: ", puzzle)
-	queue = make_queue(puzzle)
+	seen_puzzle = []
 
+	print("Expanding State: ", puzzle)
+
+	# Make queue with initial state
+	queue = make_fifo_queue(puzzle)
+
+	# Loop until queue is empty
 	while (len(queue) > 0):
-		#print("num_nodes",num_nodes)
-		n = queue.pop(0)
-		node = n.value
-		
-		repeated_state.append(node)
 
-		if node == goal_state:
+		# Remove front
+		node = queue.pop(0)
+
+		# Add puzzle to seen puzzles
+		seen_puzzle.append(node.puzzle)
+
+		# 
+		if node.puzzle == goal_state:
 			print("Goal!")
 			print("Expanded Nodes: ", num_nodes)
 			print("Max Queue: ", max_queue)
-			print("depth: ", n.g)
-
+			print("Depth: ", node.g)
 			return True
+
 		print("Expanding state")
-		print_puzzle(node)
-		queue = queueing_function(queue, node, n, puzzle,repeated_state)
+		print_puzzle(node.puzzle)
+		queue = fifo_queue_func(queue, node, seen_puzzle)
 
+	# Exhausted every state and did not find solution
 	return False
-	#print("queue", queue, queue[0].value)
 
-# Uniform cost search
-def queueing_function(queue, node, n, puzzle, repeated_state):
-	global num_nodes, max_queue
-
-	next_moves = valid_moves(node, repeated_state)
-	
-	for item in next_moves:
-		node = Node(item, n.g + 1,0,0)
-		queue.append(node)
-		num_nodes += 1
-		if len(queue) > max_queue:
-			max_queue = len(queue)
-	for p in queue: 
-		print ( p.value)
-	print("___________________")
-	return queue
-
-# FIFO Queue for Uniform Cost Search
-def make_queue(puzzle):
+# Uniform Cost Search FIFO Queue
+def make_fifo_queue(puzzle):
 	global num_nodes, max_queue
 	queue = []
 	node = Node(puzzle, 0, 0, 0) # g = 0
@@ -138,41 +148,112 @@ def make_queue(puzzle):
 		max_queue = len(queue)
 	return queue
 
+# Uniform cost search queueing function
+def fifo_queue_func(queue, node, seen_puzzle):
+	global num_nodes, max_queue
+
+	# This expands next moves
+	expand_nodes = expand_node(node.puzzle, seen_puzzle)
+	
+	# Loads up queue with all expanded nodes
+	for puzzle in expand_nodes:
+		g = node.g + 1
+		new_node = Node(puzzle, g, 0, 0)
+		queue.append(new_node)
+		num_nodes += 1
+		if len(queue) > max_queue:
+			max_queue = len(queue)
+	for p in queue: 
+		print ( p.puzzle)
+	print("___________________")
+	return queue
+
+###############################################################
+# A* Misplaced tile search algorithm
+
+def misplaced_tile_search(puzzle):
+
+	global num_nodes, max_queue
+
+	seen_puzzle = []
+	print("Expanding: ", puzzle)
+
+	# Make queue with initial state
+	heapq, queue = make_heap_queue(puzzle)
+
+	# Loop until queue is empty
+	while(len(queue) > 0):
+
+		# Node is a tuple where the first item of tuple is the priorty of the heap queue and second item is the 
+		# actual node containing the puzzle
+		node = heapq.heappop(queue)
+		node = node[1]
+
+		seen_puzzle.append(node)
+
+		if node.puzzle == goal_state:
+			print("Goal!")
+			print("Expanded Nodes: ", num_nodes)
+			print("Max Queue: ", max_queue)
+			print("Depth: ", node.g)
+			return True
+		print("Expanding state")
+		print_puzzle(node.puzzle)
+		heapq, queue = misplaced_queue_f(heapq, queue, node,seen_puzzle)
+
+	return False
+
+# A* Misplaced tile heap queue
+# Read up on how to use heap queue library at the following:
 # https://www.geeksforgeeks.org/heap-queue-or-heapq-in-python/
 def make_heap_queue(puzzle):
+
 	global num_nodes, max_queue
+
 	queue = []
 	heapq.heapify(queue)
-	node = Node(puzzle, 0, 0, 0) # g = 0
+	node = Node(puzzle, 0, 0, 0)
 
-	#https://docs.python.org/2/library/heapq.html#basic-examples
-	heapq.heappush(queue,(0,node)) # Save off into heap queue as a tuple: (priority, node)
+	# Save off into heap queue as a tuple: (priority, node)
+	# Got information on this at the following:
+	# https://docs.python.org/2/library/heapq.html#basic-examples
+	heapq.heappush(queue,(0,node)) 
+
 	num_nodes += 1
 	if len(queue) > max_queue:
 		max_queue = len(queue)
+
 	return heapq, queue
 
-def a_star_queue_f(heapq, queue, node, n, puzzle,repeated_state):
+# Calculates h1 which is the misplaced tile heuristic
+def calc_h1(puzzle):
+	h1 = 0
+	for i in range(len(puzzle)):
+		for j in range(len(puzzle)):
+			# Count number of misplaced tiles (don't count blank or 0)
+			if ((puzzle[i][j] != goal_state[i][j]) & (puzzle[i][j] != 0)):
+					h1 += 1
+	return h1
+
+# A* Misplaced tile heap queuing function
+def misplaced_queue_f(heapq, queue, node, seen_puzzle):
 	global num_nodes, max_queue
 
-	next_moves = valid_moves(node, repeated_state)
-	
-	for item in next_moves:
-		h1 = 0
-		# First calculate the f(n)
-		for i in range(len(item)):
-			#print(i)
-			for j in range(len(item)):
-				#print(item[i][j], goal_state[i][j])
-				if item[i][j] != goal_state[i][j]:
-					if item[i][j] != 0: # don't count 0
-						h1 += 1
+	print(node.puzzle)
 
-		#print(item, h1)
-		node = Node(item, n.g + 1, h1 , 0)
+	# This expands next moves
+	expand_nodes = expand_node(node.puzzle, seen_puzzle)
+	
+	# Go through each puzzle in the expanded moves and calculate f(n)
+	# Put into heap queue in order of f(n) priority
+	for puzzle in expand_nodes:
+		h1 = calc_h1(puzzle)
+		new_node = Node(puzzle, node.g + 1, h1 , 0)
+		f = int(new_node.h1 + new_node.g)
+		heapq.heappush(queue,(f,new_node))
+
 		num_nodes += 1
-		f = int(node.h1 + node.g)
-		heapq.heappush(queue,(f,node))
+
 		if len(queue) > max_queue:
 			max_queue = len(queue)
 	'''
@@ -180,42 +261,16 @@ def a_star_queue_f(heapq, queue, node, n, puzzle,repeated_state):
 		print (p[0],p[1].value)
 	print("___________________")
 	'''
-		
 	return heapq, queue
 
-def a_star_tile(puzzle):
-	g = 0
-	global num_nodes, max_queue
-	repeated_state = []
-	print("Start: ", puzzle)
-	heapq, queue = make_heap_queue(puzzle)
-	count = 0
 
-	while(len(queue) > 0):
-		node = heapq.heappop(queue)
-		#print(node[1].value) # node[1] contains the actual node
-		n = node[1]
-		node = node[1].value
-		repeated_state.append(node)
+###############################################################
 
-		if node == goal_state:
-			print("Goal!")
-			print("Expanded Nodes: ", num_nodes )
-			print("Max Queue: ", max_queue)
-			print("depth: ", n.g)
-			return True
-		print("Expanding state")
-		print_puzzle(node)
-		heapq, queue = a_star_queue_f(heapq, queue, node, n, puzzle,repeated_state)
-
-	return False
-
-
-def a_star_manhat_queue_f(heapq, queue, node, n, puzzle,repeated_state):
+def a_star_manhat_queue_f(heapq, queue, node, n, puzzle,seen_puzzle):
 	global num_nodes, max_queue
 	
 
-	next_moves = valid_moves(node, repeated_state)
+	next_moves = expand_node(node, seen_puzzle)
 	
 	for item in next_moves:
 		mismatch = []
@@ -254,9 +309,8 @@ def a_star_manhat_queue_f(heapq, queue, node, n, puzzle,repeated_state):
 	return heapq, queue
 
 def a_star_manhattan(puzzle):
-	g = 0
 	global num_nodes, max_queue
-	repeated_state = []
+	seen_puzzle = []
 	print("Start: ", puzzle)
 	heapq, queue = make_heap_queue(puzzle)
 	count = 0
@@ -266,7 +320,7 @@ def a_star_manhattan(puzzle):
 		#print(node[1].value) # node[1] contains the actual node
 		n = node[1]
 		node = node[1].value
-		repeated_state.append(node)
+		seen_puzzle.append(node)
 
 		if node == goal_state:
 			print("Goal!")
@@ -276,15 +330,16 @@ def a_star_manhattan(puzzle):
 			return True
 		print("Expanding state")
 		print_puzzle(node)
-		heapq, queue = a_star_manhat_queue_f(heapq, queue, node, n, puzzle,repeated_state)
+		heapq, queue = a_star_manhat_queue_f(heapq, queue, node, n, puzzle,seen_puzzle)
 
 	return False
+###############################################################
 
 def main(puzzle):
 	global num_nodes, max_queue
 	num_nodes,max_queue = 0,0
-	uniform_cost_search(puzzle)
-	#a_star_tile(puzzle)
+	#uniform_cost_search(puzzle)
+	misplaced_tile_search(puzzle)
 	#a_star_manhattan(puzzle)
 	return
 
