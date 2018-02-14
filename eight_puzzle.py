@@ -7,7 +7,9 @@
 from copy import deepcopy
 import heapq
 
-puzzle = [[1,2,3],[4,0,5],[7,8,6]]
+#puzzle = [[1,2,3],[4,0,5],[7,8,6]]
+#puzzle = [[3,0,2],[6,5,1],[4,7,8]]
+puzzle = [[8,7,4],[3,2,0],[6,5,1]]
 #puzzle = [[2,8,1],[0,4,3],[7,6,5]]
 #puzzle = [[1,8,2],[0,4,3],[7,6,5]]
 #puzzle = [[0,1,3],[4,2,5],[7,8,6]]
@@ -176,25 +178,30 @@ def misplaced_tile_search(puzzle):
 	global num_nodes, max_queue
 
 	seen_puzzle = []
-	print("Expanding: ", puzzle)
 
 	# Make queue with initial state
 	heapq, queue = make_heap_queue(puzzle)
 
 	# Loop until queue is empty
 	while(len(queue) > 0):
+		#print("num of nodes",num_nodes)
 
 		# Node is a tuple where the first item of tuple is the priorty of the heap queue and second item is the 
 		# actual node containing the puzzle
+
 		node = heapq.heappop(queue)
 		node = node[1]
+		if node.g != 0:
+			print("The best state to expand with g(n) = ", node.g, " and h(n) = ", node.h1, "is...")
+		else:
+			print("Expanding: ")
 
-		seen_puzzle.append(node)
+		seen_puzzle.append(node.puzzle)
 
 		if node.puzzle == goal_state:
 			print_output(num_nodes, max_queue, node.g)
 			return True
-		print("Expanding state")
+		
 		print_puzzle(node.puzzle)
 		heapq, queue = misplaced_queue_f(heapq, queue, node,seen_puzzle)
 
@@ -236,7 +243,7 @@ def calc_h1(puzzle):
 def misplaced_queue_f(heapq, queue, node, seen_puzzle):
 	global num_nodes, max_queue
 
-	print(node.puzzle)
+	#print(node.puzzle)
 
 	# This expands next moves
 	expand_nodes = expand_node(node.puzzle, seen_puzzle)
@@ -248,6 +255,7 @@ def misplaced_queue_f(heapq, queue, node, seen_puzzle):
 		new_node = Node(puzzle, node.g + 1, h1 , 0)
 		f = int(new_node.h1 + new_node.g)
 		heapq.heappush(queue,(f,new_node))
+		#print(puzzle)
 
 		num_nodes += 1
 
@@ -255,9 +263,10 @@ def misplaced_queue_f(heapq, queue, node, seen_puzzle):
 			max_queue = len(queue)
 	'''
 	for p in queue: 
-		print (p[0],p[1].value)
+		print (p[0],p[1].puzzle)
 	print("___________________")
 	'''
+	
 	return heapq, queue
 
 
@@ -280,13 +289,17 @@ def manhattan_search(puzzle):
 		node = heapq.heappop(queue)
 		node = node[1]
 
-		seen_puzzle.append(node)
+		if node.g != 0:
+			print("The best state to expand with g(n) = ", node.g, " and h(n) = ", node.h2, "is...")
+		else:
+			print("Expanding: ")
+
+		seen_puzzle.append(node.puzzle)
 
 		if node.puzzle == goal_state:
 			print_output(num_nodes, max_queue, node.g)
 			return True
 
-		print("Expanding state")
 		print_puzzle(node.puzzle)
 		heapq, queue = manhattan_queue_f(heapq, queue, node,seen_puzzle)
 
@@ -348,9 +361,9 @@ def manhattan_queue_f(heapq, queue, node,seen_puzzle):
 def main(puzzle):
 	global num_nodes, max_queue
 	num_nodes,max_queue = 0,0
-	uniform_cost_search(puzzle)
+	#uniform_cost_search(puzzle)
 	#misplaced_tile_search(puzzle)
-	#manhattan_search(puzzle)
+	manhattan_search(puzzle)
 	return
 
 main(puzzle)
