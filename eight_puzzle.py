@@ -7,9 +7,10 @@
 from copy import deepcopy
 import heapq
 
-#puzzle = [[1,2,3],[5,4,0],[7,8,6]]
+puzzle = [[1,2,3],[4,0,5],[7,8,6]]
 #puzzle = [[2,8,1],[0,4,3],[7,6,5]]
-puzzle = [[1,8,2],[0,4,3],[7,6,5]]
+#puzzle = [[1,8,2],[0,4,3],[7,6,5]]
+#puzzle = [[0,1,3],[4,2,5],[7,8,6]]
 goal_state = [[1,2,3],[4,5,6],[7,8,0]]
 
 # My node class
@@ -76,16 +77,16 @@ def expand_node(puzzle, seen_puzzle):
 	
 	# Finds all valid moves
 
-	# Move blank LEFT
-	if blank_col - 1 >= 0:
-		num_row = blank_row
-		num_col = blank_col - 1
-		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
-
 	# Move blank UP
 	if blank_row - 1 >= 0:
 		num_row = blank_row - 1
 		num_col = blank_col
+		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
+
+	# Move blank LEFT
+	if blank_col - 1 >= 0:
+		num_row = blank_row
+		num_col = blank_col - 1
 		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
 
 	# Move blank RIGHT
@@ -155,15 +156,16 @@ def fifo_queue_func(queue, node, seen_puzzle):
 	
 	# Loads up queue with all expanded nodes
 	for puzzle in expand_nodes:
-		g = node.g + 1
-		new_node = Node(puzzle, g, 0, 0)
+		new_node = Node(puzzle, node.g + 1, 0, 0)
 		queue.append(new_node)
 		num_nodes += 1
 		if len(queue) > max_queue:
 			max_queue = len(queue)
+	'''
 	for p in queue: 
 		print ( p.puzzle)
 	print("___________________")
+	'''
 	return queue
 
 ###############################################################
@@ -283,7 +285,7 @@ def manhattan_search(puzzle):
 		if node.puzzle == goal_state:
 			print_output(num_nodes, max_queue, node.g)
 			return True
-			
+
 		print("Expanding state")
 		print_puzzle(node.puzzle)
 		heapq, queue = manhattan_queue_f(heapq, queue, node,seen_puzzle)
@@ -346,9 +348,9 @@ def manhattan_queue_f(heapq, queue, node,seen_puzzle):
 def main(puzzle):
 	global num_nodes, max_queue
 	num_nodes,max_queue = 0,0
-	#uniform_cost_search(puzzle)
+	uniform_cost_search(puzzle)
 	#misplaced_tile_search(puzzle)
-	manhattan_search(puzzle)
+	#manhattan_search(puzzle)
 	return
 
 main(puzzle)
