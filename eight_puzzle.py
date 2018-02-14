@@ -4,11 +4,6 @@
 # deepcopy python
 # heapq python
 
-
-# TO DO
-# How to create a graph/tree structure
-# Then implement manhattan and misplaced tiles which is just different h(n) heuristics
-
 from copy import deepcopy
 import heapq
 
@@ -43,6 +38,12 @@ def print_puzzle(puzzle):
 	for i in puzzle:
 		print (i)
 	print("\n")
+
+def print_output(num_nodes, max_queue, depth):
+	print("Goal!")
+	print("Expanded Nodes: ", num_nodes)
+	print("Max Queue: ", max_queue)
+	print("Depth: ", depth)
 
 # Swaps the number with the blank spot 0
 def swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, b_row, b_col):
@@ -124,10 +125,7 @@ def uniform_cost_search(puzzle):
 
 		# 
 		if node.puzzle == goal_state:
-			print("Goal!")
-			print("Expanded Nodes: ", num_nodes)
-			print("Max Queue: ", max_queue)
-			print("Depth: ", node.g)
+			print_output(num_nodes, max_queue, node.g)
 			return True
 
 		print("Expanding state")
@@ -192,10 +190,7 @@ def misplaced_tile_search(puzzle):
 		seen_puzzle.append(node)
 
 		if node.puzzle == goal_state:
-			print("Goal!")
-			print("Expanded Nodes: ", num_nodes)
-			print("Max Queue: ", max_queue)
-			print("Depth: ", node.g)
+			print_output(num_nodes, max_queue, node.g)
 			return True
 		print("Expanding state")
 		print_puzzle(node.puzzle)
@@ -266,39 +261,77 @@ def misplaced_queue_f(heapq, queue, node, seen_puzzle):
 
 ###############################################################
 
-def a_star_manhat_queue_f(heapq, queue, node, n, puzzle,seen_puzzle):
+def manhattan_search(puzzle):
+
 	global num_nodes, max_queue
+
+	seen_puzzle = []
+	print("Expanding: ", puzzle)
+
+	# Make queue with initial state
+	heapq, queue = make_heap_queue(puzzle)
+
+	while(len(queue) > 0):
+
+		# Node is a tuple where the first item of tuple is the priorty of the heap queue and second item is the 
+		# actual node containing the puzzle
+		node = heapq.heappop(queue)
+		node = node[1]
+
+		seen_puzzle.append(node)
+
+		if node.puzzle == goal_state:
+			print_output(num_nodes, max_queue, node.g)
+			return True
+			
+		print("Expanding state")
+		print_puzzle(node.puzzle)
+		heapq, queue = manhattan_queue_f(heapq, queue, node,seen_puzzle)
+
+	return False
+
+# manhattan make queue is same as misplaced tile make queue
+
+def calc_h2(misplaced_list, puzzle):
+	# now go through the mismatch list and calculate h2
+	h2 = 0
+	for k in misplaced_list:
+
+		# Returns goal's location as a tuple
+		# Consulted Stack Overflow for list comprehension trick: 
+		# https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
+		goal_loc = [(i, j.index(puzzle[k[0]][k[1]])) for i, j in enumerate(goal_state) if puzzle[k[0]][k[1]] in j]
+		goal_row, goal_col = goal_loc[0][0], goal_loc[0][1]
+		h2 = h2 + abs(goal_row-k[0]) + abs(goal_col-k[1])
+	return h2
+
+#  Keep track of positions that are misplaced
+def find_misplaced_positions(puzzle):
+	misplaced = []
+	# First calculate the f(n)
+	for i in range(len(puzzle)):
+		for j in range(len(puzzle)):
+			# Count number of misplaced tiles (don't count blank or 0)
+			if (puzzle[i][j] != goal_state[i][j]) & (puzzle[i][j] != 0):
+				# Make sure misplaced isn't already in misplaced list before inserting
+				if [i,j] not in misplaced:
+					misplaced.append([i,j])
+	return misplaced
+
+def manhattan_queue_f(heapq, queue, node,seen_puzzle):
+	global num_nodes, max_queue
+
+	expand_nodes = expand_node(node.puzzle, seen_puzzle)
 	
+	for puzzle in expand_nodes:
 
-	next_moves = expand_node(node, seen_puzzle)
-	
-	for item in next_moves:
-		mismatch = []
-		# First calculate the f(n)
-		for i in range(len(item)):
-			#print(i)
-			for j in range(len(item)):
-				#print(item[i][j], goal_state[i][j])
-				if item[i][j] != goal_state[i][j]:
-					if item[i][j] != 0: # don't count 0
-						if [i,j] not in mismatch:
-							mismatch.append([i,j])
+		misplaced = find_misplaced_positions(puzzle) 
+		h2 = calc_h2(misplaced, puzzle)
+		new_node = Node(puzzle, node.g + 1, 0 , h2)
+		f = int(new_node.h2 + new_node.g)
+		heapq.heappush(queue,(f,new_node))
 
-		# now go through the mismatch list and calculate h2
-		h2 = 0
-		for k in mismatch:
-
-			# Returns goal's location as a tuple
-			# Consulted Stack Overflow for list comprehension trick: 
-			# https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
-			goal_loc = [(i, j.index(item[k[0]][k[1]])) for i, j in enumerate(goal_state) if item[k[0]][k[1]] in j]
-			goal_row, goal_col = goal_loc[0][0], goal_loc[0][1]
-			h2 = h2 + abs(goal_row-k[0]) + abs(goal_col-k[1])
-
-		node = Node(item, n.g + 1, 0 , h2)
 		num_nodes += 1
-		f = int(node.h2 + node.g)
-		heapq.heappush(queue,(f,node))
 		if len(queue) > max_queue:
 			max_queue = len(queue)
 	'''
@@ -308,39 +341,14 @@ def a_star_manhat_queue_f(heapq, queue, node, n, puzzle,seen_puzzle):
 	'''
 	return heapq, queue
 
-def a_star_manhattan(puzzle):
-	global num_nodes, max_queue
-	seen_puzzle = []
-	print("Start: ", puzzle)
-	heapq, queue = make_heap_queue(puzzle)
-	count = 0
-
-	while(len(queue) > 0):
-		node = heapq.heappop(queue)
-		#print(node[1].value) # node[1] contains the actual node
-		n = node[1]
-		node = node[1].value
-		seen_puzzle.append(node)
-
-		if node == goal_state:
-			print("Goal!")
-			print("Expanded Nodes: ", num_nodes )
-			print("Max Queue: ", max_queue)
-			print("depth: ", n.g)
-			return True
-		print("Expanding state")
-		print_puzzle(node)
-		heapq, queue = a_star_manhat_queue_f(heapq, queue, node, n, puzzle,seen_puzzle)
-
-	return False
 ###############################################################
 
 def main(puzzle):
 	global num_nodes, max_queue
 	num_nodes,max_queue = 0,0
 	#uniform_cost_search(puzzle)
-	misplaced_tile_search(puzzle)
-	#a_star_manhattan(puzzle)
+	#misplaced_tile_search(puzzle)
+	manhattan_search(puzzle)
 	return
 
 main(puzzle)
