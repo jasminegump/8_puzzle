@@ -10,7 +10,9 @@
 from copy import deepcopy
 import heapq
 
-puzzle = [[1,2,3],[4,0,5],[7,8,6]]
+#puzzle = [[1,2,3],[5,4,0],[7,8,6]]
+#puzzle = [[2,8,1],[0,4,3],[7,6,5]]
+puzzle = [[1,8,2],[0,4,3],[7,6,5]]
 goal_state = [[1,2,3],[4,5,6],[7,8,0]]
 
 class Node:
@@ -173,9 +175,11 @@ def a_star_queue_f(heapq, queue, node, n, puzzle,repeated_state):
 		heapq.heappush(queue,(f,node))
 		if len(queue) > max_queue:
 			max_queue = len(queue)
+	'''
 	for p in queue: 
 		print (p[0],p[1].value)
 	print("___________________")
+	'''
 		
 	return heapq, queue
 
@@ -206,11 +210,82 @@ def a_star_tile(puzzle):
 
 	return False
 
+
+def a_star_manhat_queue_f(heapq, queue, node, n, puzzle,repeated_state):
+	global num_nodes, max_queue
+	
+
+	next_moves = valid_moves(node, repeated_state)
+	
+	for item in next_moves:
+		mismatch = []
+		# First calculate the f(n)
+		for i in range(len(item)):
+			#print(i)
+			for j in range(len(item)):
+				#print(item[i][j], goal_state[i][j])
+				if item[i][j] != goal_state[i][j]:
+					if item[i][j] != 0: # don't count 0
+						if [i,j] not in mismatch:
+							mismatch.append([i,j])
+
+		# now go through the mismatch list and calculate h2
+		h2 = 0
+		for k in mismatch:
+
+			# Returns goal's location as a tuple
+			# Consulted Stack Overflow for list comprehension trick: 
+			# https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
+			goal_loc = [(i, j.index(item[k[0]][k[1]])) for i, j in enumerate(goal_state) if item[k[0]][k[1]] in j]
+			goal_row, goal_col = goal_loc[0][0], goal_loc[0][1]
+			h2 = h2 + abs(goal_row-k[0]) + abs(goal_col-k[1])
+
+		node = Node(item, n.g + 1, 0 , h2)
+		num_nodes += 1
+		f = int(node.h2 + node.g)
+		heapq.heappush(queue,(f,node))
+		if len(queue) > max_queue:
+			max_queue = len(queue)
+	'''
+	for p in queue: 
+		print (p[0],p[1].value)
+	print("___________________")
+	'''
+	return heapq, queue
+
+def a_star_manhattan(puzzle):
+	g = 0
+	global num_nodes, max_queue
+	repeated_state = []
+	print("Start: ", puzzle)
+	heapq, queue = make_heap_queue(puzzle)
+	count = 0
+
+	while(len(queue) > 0):
+		node = heapq.heappop(queue)
+		#print(node[1].value) # node[1] contains the actual node
+		n = node[1]
+		node = node[1].value
+		repeated_state.append(node)
+
+		if node == goal_state:
+			print("Goal!")
+			print("Expanded Nodes: ", num_nodes )
+			print("Max Queue: ", max_queue)
+			print("depth: ", n.g)
+			return True
+		print("Expanding state")
+		print_puzzle(node)
+		heapq, queue = a_star_manhat_queue_f(heapq, queue, node, n, puzzle,repeated_state)
+
+	return False
+
 def main(puzzle):
 	global num_nodes, max_queue
 	num_nodes,max_queue = 0,0
 	uniform_cost_search(puzzle)
 	#a_star_tile(puzzle)
+	#a_star_manhattan(puzzle)
 	return
 
 main(puzzle)
