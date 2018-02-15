@@ -1,16 +1,29 @@
+'''
+CS 205 Project 1 - Eight Puzzle
+Last updated 2/15/2018
+Written by Jasmine Kim
+'''
+
 # Outside citations
 # https://www.ics.uci.edu/~welling/teaching/271fall09/InfSearch271f09.ppt
-# 
-
 from copy import deepcopy
 import heapq
+import time
 
-easy_puzzle = [[1,2,3],[4,0,5],[7,8,6]]
-#puzzle = [[3,0,2],[6,5,1],[4,7,8]]
-#puzzle = [[8,7,4],[3,2,0],[6,5,1]]
-#puzzle = [[2,8,1],[0,4,3],[7,6,5]]
-#puzzle = [[1,8,2],[0,4,3],[7,6,5]]
-#puzzle = [[0,1,3],[4,2,5],[7,8,6]]
+# metric 0
+#easy_puzzle = [[1,2,3],[4,5,6],[7,8,0]]
+#metric 1
+#easy_puzzle = [[1,2,3],[4,0,5],[7,8,6]]
+#metric 2
+#easy_puzzle = [[5,1,2],[6,3,0],[4,7,8]]
+
+#metric 3
+#easy_puzzle = [[4,3,6],[8,7,1],[0,5,2]]
+
+#metric 4
+#easy_puzzle = [[1,2,3],[4,5,6],[8,7,0]]
+easy_puzzle = [[8,7,6],[5,4,3],[0,2,1]]
+
 goal_state = [[1,2,3],[4,5,6],[7,8,0]]
 
 # My node class
@@ -38,10 +51,13 @@ class Node:
 def print_puzzle(puzzle):
 	for i in puzzle:
 		print (i)
+	print("Expanding this node...")
 	print("\n")
 
+# Prints the finished output
 def print_output(num_nodes, max_queue, depth):
 	print("Goal!!")
+	print("")
 	print("To solve this problem, the search algorithm expanded a total of ", num_nodes, "nodes")
 	print("The maximum number of nodes in the queue at any one time was ", max_queue)
 	print("The depth of the goal node was  ", depth)
@@ -165,11 +181,6 @@ def fifo_queue_func(queue, node, seen_puzzle):
 		num_nodes += 1
 		if len(queue) > max_queue:
 			max_queue = len(queue)
-	'''
-	for p in queue: 
-		print ( p.puzzle)
-	print("___________________")
-	'''
 	return queue
 
 ###############################################################
@@ -263,12 +274,6 @@ def misplaced_queue_f(heapq, queue, node, seen_puzzle):
 
 		if len(queue) > max_queue:
 			max_queue = len(queue)
-	'''
-	for p in queue: 
-		print (p[0],p[1].puzzle)
-	print("___________________")
-	'''
-	
 	return heapq, queue
 
 
@@ -290,8 +295,9 @@ def manhattan_search(puzzle):
 		node = heapq.heappop(queue)
 		node = node[1]
 
-		if node.g != 0:
-			print("The best state to expand with g(n) = ", node.g, " and h(n) = ", node.h2, "is...")
+		if (node.g != 0):
+			if (node.puzzle != goal_state):
+				print("The best state to expand with g(n) = ", node.g, " and h(n) = ", node.h2, "is...")
 		else:
 			print("Expanding state ")
 
@@ -350,19 +356,17 @@ def manhattan_queue_f(heapq, queue, node,seen_puzzle):
 		num_nodes += 1
 		if len(queue) > max_queue:
 			max_queue = len(queue)
-	'''
-	for p in queue: 
-		print (p[0],p[1].value)
-	print("___________________")
-	'''
 	return heapq, queue
 
 ###############################################################
+
+# Converts string input into a list of numbers for puzzle
 def str2int_list(puzzle):
 	temp_list = [int(i) for i in input().split()]
 	puzzle.append(temp_list)
 	return puzzle
 
+# Allows user to select default puzzle or input own puzzle
 def choose_puzzle():
 	print("Type '1' to use a default puzzle, or '2' to enter your own puzzle.")
 	input_val = int(input())
@@ -383,12 +387,16 @@ def choose_puzzle():
 		puzzle = easy_puzzle
 	return puzzle
 
+# Allows user to select algorithm
 def choose_algorithm(puzzle):
 	print("Enter your choice of algorithm")
 	print("1. Uniform Cost Search")
 	print("2. A* with the Misplaced Tile Heuristic")
 	print("3. A* with the Manhattan Distance Heuristic")
 	algorithm = int(input())
+
+	start = time.time()
+
 	if algorithm == 1:
 		uniform_cost_search(puzzle)
 	elif algorithm == 2:
@@ -397,7 +405,10 @@ def choose_algorithm(puzzle):
 		manhattan_search(puzzle)
 	else:
 		print("Invalid")
+	end = time.time()
+	print("Time lapsed: ", end-start)
 
+# Main loop
 def main():
 	global num_nodes, max_queue
 	num_nodes,max_queue = 0,0
