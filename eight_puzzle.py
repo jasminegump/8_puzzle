@@ -1,15 +1,13 @@
 # Outside citations
 # https://www.ics.uci.edu/~welling/teaching/271fall09/InfSearch271f09.ppt
-# https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
-# deepcopy python
-# heapq python
+# 
 
 from copy import deepcopy
 import heapq
 
-#puzzle = [[1,2,3],[4,0,5],[7,8,6]]
+easy_puzzle = [[1,2,3],[4,0,5],[7,8,6]]
 #puzzle = [[3,0,2],[6,5,1],[4,7,8]]
-puzzle = [[8,7,4],[3,2,0],[6,5,1]]
+#puzzle = [[8,7,4],[3,2,0],[6,5,1]]
 #puzzle = [[2,8,1],[0,4,3],[7,6,5]]
 #puzzle = [[1,8,2],[0,4,3],[7,6,5]]
 #puzzle = [[0,1,3],[4,2,5],[7,8,6]]
@@ -43,10 +41,10 @@ def print_puzzle(puzzle):
 	print("\n")
 
 def print_output(num_nodes, max_queue, depth):
-	print("Goal!")
-	print("Expanded Nodes: ", num_nodes)
-	print("Max Queue: ", max_queue)
-	print("Depth: ", depth)
+	print("Goal!!")
+	print("To solve this problem, the search algorithm expanded a total of ", num_nodes, "nodes")
+	print("The maximum number of nodes in the queue at any one time was ", max_queue)
+	print("The depth of the goal node was  ", depth)
 
 # Swaps the number with the blank spot 0
 def swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, b_row, b_col):
@@ -64,20 +62,24 @@ def swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, b_row, b_c
 		expand_puzzle.append(temp_puzzle)
 	return expand_puzzle
 
+# Returns blank's location as a tuple
+# Looking for 0
+# Consulted Stack Overflow for list comprehension: 
+# https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
+def get_blank_loc(puzzle):
+	blank = 0
+	blank_loc = [(i, j.index(blank)) for i, j in enumerate(puzzle) if blank in j]
+	blank_row, blank_col = blank_loc[0][0], blank_loc[0][1]
+	return blank_row, blank_col
+
 # Outputs a nested list of valid puzzles
 def expand_node(puzzle, seen_puzzle):
 	moves = []
 	expand_puzzle = []
 
-	# Returns blank's location as a tuple
-	# Looking for 0
-	# Consulted Stack Overflow for list comprehension: 
-	# https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
-	blank = 0
-	blank_loc = [(i, j.index(blank)) for i, j in enumerate(puzzle) if blank in j]
-	blank_row, blank_col = blank_loc[0][0], blank_loc[0][1]
-	
-	# Finds all valid moves
+	blank_row, blank_col = get_blank_loc(puzzle)
+
+	# Find all valid moves
 
 	# Move blank UP
 	if blank_row - 1 >= 0:
@@ -112,7 +114,7 @@ def uniform_cost_search(puzzle):
 	global num_nodes, max_queue
 	seen_puzzle = []
 
-	print("Expanding State: ", puzzle)
+	print("Expanding State ", puzzle)
 
 	# Make queue with initial state
 	queue = make_fifo_queue(puzzle)
@@ -131,7 +133,7 @@ def uniform_cost_search(puzzle):
 			print_output(num_nodes, max_queue, node.g)
 			return True
 
-		print("Expanding state")
+		print("The best state to expand with g(n) = ", node.g, "h(n) = ", 0, "is...")
 		print_puzzle(node.puzzle)
 		queue = fifo_queue_func(queue, node, seen_puzzle)
 
@@ -194,7 +196,7 @@ def misplaced_tile_search(puzzle):
 		if node.g != 0:
 			print("The best state to expand with g(n) = ", node.g, " and h(n) = ", node.h1, "is...")
 		else:
-			print("Expanding: ")
+			print("Expanding state ")
 
 		seen_puzzle.append(node.puzzle)
 
@@ -277,7 +279,6 @@ def manhattan_search(puzzle):
 	global num_nodes, max_queue
 
 	seen_puzzle = []
-	print("Expanding: ", puzzle)
 
 	# Make queue with initial state
 	heapq, queue = make_heap_queue(puzzle)
@@ -292,7 +293,7 @@ def manhattan_search(puzzle):
 		if node.g != 0:
 			print("The best state to expand with g(n) = ", node.g, " and h(n) = ", node.h2, "is...")
 		else:
-			print("Expanding: ")
+			print("Expanding state ")
 
 		seen_puzzle.append(node.puzzle)
 
@@ -357,13 +358,52 @@ def manhattan_queue_f(heapq, queue, node,seen_puzzle):
 	return heapq, queue
 
 ###############################################################
+def str2int_list(puzzle):
+	temp_list = [int(i) for i in input().split()]
+	puzzle.append(temp_list)
+	return puzzle
 
-def main(puzzle):
+def choose_puzzle():
+	print("Type '1' to use a default puzzle, or '2' to enter your own puzzle.")
+	input_val = int(input())
+
+	if input_val == 2:
+		puzzle = []
+
+		print("Enter your puzzle, use a zero to represent the blank")
+		print("Enter the first row, use space or tabs between numbers")
+		puzzle = str2int_list(puzzle)
+
+		print("Enter the second row, use space or tabs between numbers")
+		puzzle = str2int_list(puzzle)
+
+		print("Enter the third row, use space or tabs between numbers")
+		puzzle = str2int_list(puzzle)
+	else:
+		puzzle = easy_puzzle
+	return puzzle
+
+def choose_algorithm(puzzle):
+	print("Enter your choice of algorithm")
+	print("1. Uniform Cost Search")
+	print("2. A* with the Misplaced Tile Heuristic")
+	print("3. A* with the Manhattan Distance Heuristic")
+	algorithm = int(input())
+	if algorithm == 1:
+		uniform_cost_search(puzzle)
+	elif algorithm == 2:
+		misplaced_tile_search(puzzle)
+	elif algorithm == 3:
+		manhattan_search(puzzle)
+	else:
+		print("Invalid")
+
+def main():
 	global num_nodes, max_queue
 	num_nodes,max_queue = 0,0
-	#uniform_cost_search(puzzle)
-	#misplaced_tile_search(puzzle)
-	manhattan_search(puzzle)
+	print("Welcome to Jasmine Kim's 8-puzzle solver.")
+	puzzle = choose_puzzle()
+	choose_algorithm(puzzle)
 	return
 
-main(puzzle)
+main()
