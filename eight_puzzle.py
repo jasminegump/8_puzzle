@@ -1,29 +1,9 @@
-'''
-CS 205 Project 1 - Eight Puzzle
-Last updated 2/15/2018
-Written by Jasmine Kim
-'''
-
-# Outside citations
-# https://www.ics.uci.edu/~welling/teaching/271fall09/InfSearch271f09.ppt
 from copy import deepcopy
 import heapq
 import time
 
-# metric 0
-#easy_puzzle = [[1,2,3],[4,5,6],[7,8,0]]
-#metric 1
-#easy_puzzle = [[1,2,3],[4,0,5],[7,8,6]]
-#metric 2
-#easy_puzzle = [[5,1,2],[6,3,0],[4,7,8]]
-
-#metric 3
-#easy_puzzle = [[4,3,6],[8,7,1],[0,5,2]]
-
-#metric 4
-#easy_puzzle = [[1,2,3],[4,5,6],[8,7,0]]
-easy_puzzle = [[8,7,6],[5,4,3],[0,2,1]]
-
+# Hardcoded test puzzle
+easy_puzzle = [[5,0,3],[2,8,4],[6,7,1]]
 goal_state = [[1,2,3],[4,5,6],[7,8,0]]
 
 # My node class
@@ -39,91 +19,14 @@ class Node:
 		# Heuristics where h1 = misplaced tiles, h2 = manhattan
 		self.h1 = h1
 		self.h2	= h2
-
-	# This is necessary in order for heapqueue to work since certain heuristics will have the same priority
-	# Therefore, arbitrarily compare nodes because priority really doesn't matter when they have the same f(n)
-	# Got information on how to do this from:
-	# https://stackoverflow.com/questions/39423979/order-of-comparison-for-heap-elements-in-python
+	'''
+	This is necessary in order for heapqueue to work since certain heuristics will have the same priority
+	Therefore, arbitrarily compare nodes because priority really doesn't matter when they have the same f(n)
+	Got information on how to do this from:
+	https://stackoverflow.com/questions/39423979/order-of-comparison-for-heap-elements-in-python
+	'''
 	def __lt__(self, next):
 		return self.h1 < next.h1
-
-# Prints the puzzle nicely
-def print_puzzle(puzzle):
-	for i in puzzle:
-		print (i)
-	print("Expanding this node...")
-	print("\n")
-
-# Prints the finished output
-def print_output(num_nodes, max_queue, depth):
-	print("Goal!!")
-	print("")
-	print("To solve this problem, the search algorithm expanded a total of ", num_nodes, "nodes")
-	print("The maximum number of nodes in the queue at any one time was ", max_queue)
-	print("The depth of the goal node was  ", depth)
-
-# Swaps the number with the blank spot 0
-def swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, b_row, b_col):
-
-	# Must deepcopy the puzzle because each swap needs to be a new list and not a modification of old list
-	# Each puzzle is a unique copy
-	temp_puzzle = deepcopy(puzzle)
-
-	# Swap blank and number
-	temp_puzzle[num_row][num_col] = 0
-	temp_puzzle[b_row][b_col] = puzzle[num_row][num_col]
-
-	# Check if puzzle state seen before and add to seen puzzles
-	if temp_puzzle not in seen_puzzle:
-		expand_puzzle.append(temp_puzzle)
-	return expand_puzzle
-
-# Returns blank's location as a tuple
-# Looking for 0
-# Consulted Stack Overflow for list comprehension: 
-# https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
-def get_blank_loc(puzzle):
-	blank = 0
-	blank_loc = [(i, j.index(blank)) for i, j in enumerate(puzzle) if blank in j]
-	blank_row, blank_col = blank_loc[0][0], blank_loc[0][1]
-	return blank_row, blank_col
-
-# Outputs a nested list of valid puzzles
-def expand_node(puzzle, seen_puzzle):
-	moves = []
-	expand_puzzle = []
-
-	blank_row, blank_col = get_blank_loc(puzzle)
-
-	# Find all valid moves
-
-	# Move blank UP
-	if blank_row - 1 >= 0:
-		num_row = blank_row - 1
-		num_col = blank_col
-		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
-
-	# Move blank LEFT
-	if blank_col - 1 >= 0:
-		num_row = blank_row
-		num_col = blank_col - 1
-		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
-
-	# Move blank RIGHT
-	if blank_col + 1 <= len(puzzle)-1:
-		num_row = blank_row
-		num_col = blank_col + 1
-		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
-
-	# Move blank DOWN
-	if blank_row + 1 <= len(puzzle)-1:
-		num_row = blank_row + 1
-		num_col = blank_col
-		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
-
-	return expand_puzzle
-
-###############################################################
 
 # Uniform cost search search algorithm
 def uniform_cost_search(puzzle):
@@ -183,9 +86,7 @@ def fifo_queue_func(queue, node, seen_puzzle):
 			max_queue = len(queue)
 	return queue
 
-###############################################################
 # A* Misplaced tile search algorithm
-
 def misplaced_tile_search(puzzle):
 
 	global num_nodes, max_queue
@@ -219,10 +120,11 @@ def misplaced_tile_search(puzzle):
 		heapq, queue = misplaced_queue_f(heapq, queue, node,seen_puzzle)
 
 	return False
-
-# A* Misplaced tile heap queue
-# Read up on how to use heap queue library at the following:
-# https://www.geeksforgeeks.org/heap-queue-or-heapq-in-python/
+'''
+A* Misplaced tile heap queue
+Read up on how to use heap queue library at the following:
+https://www.geeksforgeeks.org/heap-queue-or-heapq-in-python/
+'''
 def make_heap_queue(puzzle):
 
 	global num_nodes, max_queue
@@ -230,10 +132,11 @@ def make_heap_queue(puzzle):
 	queue = []
 	heapq.heapify(queue)
 	node = Node(puzzle, 0, 0, 0)
-
-	# Save off into heap queue as a tuple: (priority, node)
-	# Got information on this at the following:
-	# https://docs.python.org/2/library/heapq.html#basic-examples
+	'''
+	Save off into heap queue as a tuple: (priority, node)
+	Got information on this at the following:
+	https://docs.python.org/2/library/heapq.html#basic-examples
+	'''
 	heapq.heappush(queue,(0,node)) 
 
 	num_nodes += 1
@@ -276,9 +179,54 @@ def misplaced_queue_f(heapq, queue, node, seen_puzzle):
 			max_queue = len(queue)
 	return heapq, queue
 
+#  Keep track of positions that are misplaced
+def find_misplaced_positions(puzzle):
+	misplaced = []
+	# First calculate the f(n)
+	for i in range(len(puzzle)):
+		for j in range(len(puzzle)):
+			# Count number of misplaced tiles (don't count blank or 0)
+			if (puzzle[i][j] != goal_state[i][j]) & (puzzle[i][j] != 0):
+				# Make sure misplaced isn't already in misplaced list before inserting
+				if [i,j] not in misplaced:
+					misplaced.append([i,j])
+	return misplaced
 
-###############################################################
+def calc_h2(misplaced_list, puzzle):
+	# now go through the mismatch list and calculate h2
+	h2 = 0
+	for k in misplaced_list:
 
+		'''Returns goal's location as a tuple
+		Consulted Stack Overflow for list comprehension trick: 
+		https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item'''
+		goal_loc = [(i, j.index(puzzle[k[0]][k[1]])) for i, j in enumerate(goal_state) if puzzle[k[0]][k[1]] in j]
+		goal_row, goal_col = goal_loc[0][0], goal_loc[0][1]
+		h2 = h2 + abs(goal_row-k[0]) + abs(goal_col-k[1])
+		print(h2)
+	return h2
+
+
+#A* Manhattan Distance queuing function
+def manhattan_queue_f(heapq, queue, node,seen_puzzle):
+	global num_nodes, max_queue
+
+	expand_nodes = expand_node(node.puzzle, seen_puzzle)
+	
+	for puzzle in expand_nodes:
+
+		misplaced = find_misplaced_positions(puzzle) 
+		h2 = calc_h2(misplaced, puzzle)
+		new_node = Node(puzzle, node.g + 1, 0 , h2)
+		f = int(new_node.h2 + new_node.g)
+		heapq.heappush(queue,(f,new_node))
+
+		num_nodes += 1
+		if len(queue) > max_queue:
+			max_queue = len(queue)
+	return heapq, queue
+
+#A* Manhattan Distance search function
 def manhattan_search(puzzle):
 
 	global num_nodes, max_queue
@@ -312,53 +260,82 @@ def manhattan_search(puzzle):
 
 	return False
 
-# manhattan make queue is same as misplaced tile make queue
+# Swaps the number with the blank spot 0
+def swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, b_row, b_col):
 
-def calc_h2(misplaced_list, puzzle):
-	# now go through the mismatch list and calculate h2
-	h2 = 0
-	for k in misplaced_list:
+	# Must deepcopy the puzzle because each swap needs to be a new list and not a modification of old list
+	# Each puzzle is a unique copy
+	temp_puzzle = deepcopy(puzzle)
 
-		# Returns goal's location as a tuple
-		# Consulted Stack Overflow for list comprehension trick: 
-		# https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
-		goal_loc = [(i, j.index(puzzle[k[0]][k[1]])) for i, j in enumerate(goal_state) if puzzle[k[0]][k[1]] in j]
-		goal_row, goal_col = goal_loc[0][0], goal_loc[0][1]
-		h2 = h2 + abs(goal_row-k[0]) + abs(goal_col-k[1])
-	return h2
+	# Swap blank and number
+	temp_puzzle[num_row][num_col] = 0
+	temp_puzzle[b_row][b_col] = puzzle[num_row][num_col]
 
-#  Keep track of positions that are misplaced
-def find_misplaced_positions(puzzle):
-	misplaced = []
-	# First calculate the f(n)
-	for i in range(len(puzzle)):
-		for j in range(len(puzzle)):
-			# Count number of misplaced tiles (don't count blank or 0)
-			if (puzzle[i][j] != goal_state[i][j]) & (puzzle[i][j] != 0):
-				# Make sure misplaced isn't already in misplaced list before inserting
-				if [i,j] not in misplaced:
-					misplaced.append([i,j])
-	return misplaced
+	# Check if puzzle state seen before and add to seen puzzles
+	if temp_puzzle not in seen_puzzle:
+		expand_puzzle.append(temp_puzzle)
+	return expand_puzzle
 
-def manhattan_queue_f(heapq, queue, node,seen_puzzle):
-	global num_nodes, max_queue
+'''
+Returns blank's location as a tuple
+Looking for 0
+Consulted Stack Overflow for list comprehension: 
+https://stackoverflow.com/questions/43838601/how-can-i-get-the-index-of-a-nested-list-item
+'''
+def get_blank_loc(puzzle):
+	blank = 0
+	blank_loc = [(i, j.index(blank)) for i, j in enumerate(puzzle) if blank in j]
+	blank_row, blank_col = blank_loc[0][0], blank_loc[0][1]
+	return blank_row, blank_col
 
-	expand_nodes = expand_node(node.puzzle, seen_puzzle)
-	
-	for puzzle in expand_nodes:
+# Outputs a nested list of valid puzzles
+def expand_node(puzzle, seen_puzzle):
+	moves = []
+	expand_puzzle = []
 
-		misplaced = find_misplaced_positions(puzzle) 
-		h2 = calc_h2(misplaced, puzzle)
-		new_node = Node(puzzle, node.g + 1, 0 , h2)
-		f = int(new_node.h2 + new_node.g)
-		heapq.heappush(queue,(f,new_node))
+	blank_row, blank_col = get_blank_loc(puzzle)
 
-		num_nodes += 1
-		if len(queue) > max_queue:
-			max_queue = len(queue)
-	return heapq, queue
+	# Find all valid moves
+	# Move blank UP
+	if blank_row - 1 >= 0:
+		num_row = blank_row - 1
+		num_col = blank_col
+		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
 
-###############################################################
+	# Move blank LEFT
+	if blank_col - 1 >= 0:
+		num_row = blank_row
+		num_col = blank_col - 1
+		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
+
+	# Move blank RIGHT
+	if blank_col + 1 <= len(puzzle)-1:
+		num_row = blank_row
+		num_col = blank_col + 1
+		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
+
+	# Move blank DOWN
+	if blank_row + 1 <= len(puzzle)-1:
+		num_row = blank_row + 1
+		num_col = blank_col
+		expand_puzzle = swap_pieces(expand_puzzle, puzzle, seen_puzzle, num_row, num_col, blank_row, blank_col)
+
+	return expand_puzzle
+
+# Prints the puzzle nicely
+def print_puzzle(puzzle):
+	for i in puzzle:
+		print (i)
+	print("Expanding this node...")
+	print("\n")
+
+# Prints the finished output
+def print_output(num_nodes, max_queue, depth):
+	print("Goal!!")
+	print("")
+	print("To solve this problem, the search algorithm expanded a total of ", num_nodes, "nodes")
+	print("The maximum number of nodes in the queue at any one time was ", max_queue)
+	print("The depth of the goal node was  ", depth)
 
 # Converts string input into a list of numbers for puzzle
 def str2int_list(puzzle):
@@ -407,6 +384,7 @@ def choose_algorithm(puzzle):
 		print("Invalid")
 	end = time.time()
 	print("Time lapsed: ", end-start)
+
 
 # Main loop
 def main():
